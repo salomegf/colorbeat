@@ -174,7 +174,6 @@ function draw() {
   let volume_string = volBrightness + "\n";
   if (sounds[choice].isPlaying()) {
     serial.write(volume_string);
-    //console.log(volume_string)
   }
 
   if (msg.length !== 1) {
