@@ -6,19 +6,16 @@ let portName = "/dev/tty.usbmodem14101"; // fill in your serial port name here
 let width = window.innerWidth;
 let height = window.innerHeight;
 
-const NUMPIXELS = 24;
-
-const beats = ['beat1.mp3', 'beat2.mp3', 'beat3.mp3'] // ajouter ici les nouveaux morceaux
+const beats = ['beat1.mp3', 'beat2.mp3', 'beat3.mp3'] // ajouter ici le nom des nouveaux morceaux
 let choice = 0;
 let sounds = [];
+let amplitude;
 
 let msg = [];
 let modeBrightness, modeMp3;
 
-let mic;
-let sound, amplitude;
 let poppinsBlack, poppinsLight;
-let angle, angle1, angle2, angle3, angle4;
+let angle;
 
 let select;
 
@@ -26,7 +23,6 @@ function preload() {
   for (let i = 0; i < beats.length; i++) {
     sounds.push(loadSound(`assets/music/${beats[i]}`));
   }
-
   poppinsBlack = loadFont('assets/fonts/Poppins-Black.ttf');
   poppinsLight = loadFont('assets/fonts/Poppins-Light.ttf');
   img = loadImage('assets/img/image.svg');
@@ -118,6 +114,13 @@ function draw() {
   textSize(20);
   text('tap to play', 40, 100);
 
+  textFont(poppinsLight);
+  textSize(15);
+  fill(250, 250, 250, 127);
+  text('un projet par adriana, héloïse & salomé', 40, height - 30);
+
+  textSize(20);
+  fill('#fafafa');
   if (modeBrightness) {
     text('intensité', width - 150, height - 70);
     fill(250, 250, 250, 127);
@@ -160,20 +163,19 @@ function draw() {
   noStroke();
 
   translate(width / 2, height / 2);
-
   if (sounds[choice].isPlaying()) {
     angle++
   }
   angleMode(DEGREES);
-
   rotate(angle);
   image(img, 0 - size / 2, 0 - size / 2, size, size);
 
-  let volPixels = map(level, 0, 1, 0, NUMPIXELS);
-  let volInsensite = map(level, 0, 1, 0, 255);
-  let volume_string = volInsensite + "\n";
-  serial.write(volume_string);
-  //console.log(volume_string)
+  let volBrightness = map(level, 0, 1, 0, 255);
+  let volume_string = volBrightness + "\n";
+  if (sounds[choice].isPlaying()) {
+    serial.write(volume_string);
+    //console.log(volume_string)
+  }
 
   if (msg.length !== 1) {
     modeBrightness = parseInt(msg[0])

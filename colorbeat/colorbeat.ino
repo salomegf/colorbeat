@@ -14,9 +14,10 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 float level;
 float nbPixels;
-float intensite;
+float brightness;
 int valueMic;
 
+const int colors = 3;
 int potentis[] = { A1, A2, A3 };
 int values[] = { 0, 0, 0 };
 
@@ -28,8 +29,6 @@ const int buttonSound = 5;
 int btnSoundState = 0;
 int prevBtnSoundState = 0;
 
-const int couleurs = 3;
-
 bool modeBrightness = false;
 bool modeMp3 = false;
 
@@ -37,7 +36,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Début de mon code");
   pixels.begin();
-  for (int i = 0; i < couleurs; i++) {
+  for (int i = 0; i < colors; i++) {
     pinMode(potentis[i], INPUT);
   }
   pinMode(buttonLight, INPUT);
@@ -45,14 +44,25 @@ void setup() {
 }
 
 void loop() {
+  // lecture des potentiomètres
+  for (int i = 0; i < colors; i++) {
+    values[i] = map(analogRead(potentis[i]), 0, 1023, 0, 255);
+  }
+
+  // modes de son
+  btnSoundState = digitalRead(buttonSound);
+  if (btnSoundState == 1 && btnSoundState != prevBtnSoundState) {
+    modeMp3 = !modeMp3;
+  }
+  prevBtnSoundState = btnSoundState;
+
   if (modeMp3) {
     if (Serial.available() > 0) {
       String s = Serial.readStringUntil('\n');
       int delim = s.indexOf(',');
-      intensite = s.substring(0, delim).toInt();
+      brightness = s.substring(0, delim).toInt();
     }
-    nbPixels = map(intensite, 0, 255, 0, NUMPIXELS);
-    
+    nbPixels = map(brightness, 0, 255, 0, NUMPIXELS);
   } else {
     valueMic = analogRead(MIC_PIN);
     if (valueMic > SENSITIVITY) {
@@ -61,49 +71,41 @@ void loop() {
     if (valueMic < MINVAL) {
       valueMic = 0;
     }
-    intensite = map(valueMic, 0, 300, 0, 255);
+    brightness = map(valueMic, 0, 300, 0, 255);
     nbPixels = map(valueMic, 0, 300, 0, NUMPIXELS);
-    //Serial.println(valueMic);
   }
 
+  // modes de lumière
   btnLightState = digitalRead(buttonLight);
   if (btnLightState == 1 && btnLightState != prevBtnLightState) {
     modeBrightness = !modeBrightness;
   }
   prevBtnLightState = btnLightState;
 
-  btnSoundState = digitalRead(buttonSound);
-  if (btnSoundState == 1 && btnSoundState != prevBtnSoundState) {
-    modeMp3 = !modeMp3;
-  }
-  prevBtnSoundState = btnSoundState;
-
-  for (int i = 0; i < couleurs; i++) {
-    values[i] = map(analogRead(potentis[i]), 0, 1023, 0, 255);
-  }
-
   if (modeBrightness) {
-    changeBrightness(intensite, values);
+    changeBrightness(brightness);
   } else {
     pixels.clear();
     changeNbLeds(nbPixels);
   }
-  //Serial.println((String) "RGB : " + values[0] + ", " + values[1] + ", " + values[2]);
+
+  // envoi au JS
   Serial.println((String)modeBrightness + "," + modeMp3);
 }
 
-void changeBrightness(int brightness, int rgb[couleurs]) {
+// mode de lumière "intensité"
+void changeBrightness(int brightness) {
   for (int i = 0; i < NUMPIXELS; i++) {
-    //pixels.rainbow(0, 1, 255, volume, true);
     pixels.setPixelColor(i, values[0], values[1], values[2]);
     pixels.setBrightness(brightness);
     pixels.show();
   }
 }
 
+// mode de lumière "linéaire"
 void changeNbLeds(int nbPixelsAllumes) {
+  pixels.setBrightness(255);
   for (int i = 0; i < nbPixelsAllumes; i++) {
-    pixels.setBrightness(50);
     pixels.setPixelColor(i, values[0], values[1], values[2]);
     pixels.show();
   }
